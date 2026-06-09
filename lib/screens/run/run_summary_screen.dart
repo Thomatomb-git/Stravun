@@ -63,15 +63,16 @@ class _RunSummaryScreenState extends State<RunSummaryScreen> {
                     urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                     userAgentPackageName: 'com.example.stravun',
                   ),
-                  PolylineLayer(
-                    polylines: [
-                      Polyline(
-                        points: routePoints,
-                        strokeWidth: 4.0,
-                        color: AppColors.accentNeon,
-                      ),
-                    ],
-                  ),
+                  if (routePoints.isNotEmpty)
+                    PolylineLayer(
+                      polylines: [
+                        Polyline(
+                          points: routePoints,
+                          strokeWidth: 4.0,
+                          color: AppColors.accentNeon,
+                        ),
+                      ],
+                    ),
                   if (routePoints.isNotEmpty)
                     MarkerLayer(
                       markers: [

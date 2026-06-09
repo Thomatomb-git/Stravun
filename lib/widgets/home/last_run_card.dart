@@ -20,10 +20,6 @@ class LastRunCard extends StatelessWidget {
       children: [
         SectionHeader(
           title: 'Last Run',
-          actionText: 'VIEW HISTORY',
-          onAction: () {
-            // Navigate to history (future phase)
-          },
         ),
         const SizedBox(height: AppConstants.stackMd),
         Container(

@@ -148,17 +148,20 @@ class FirestoreService {
     // Start of the week (Monday)
     final startOfWeek = DateTime(now.year, now.month, now.day).subtract(Duration(days: now.weekday - 1));
     
+    // To avoid requiring a composite index on userId and startedAt,
+    // we fetch by userId and filter by date locally.
     final snapshot = await _db.collection('runs')
         .where('userId', isEqualTo: uid)
-        .where('startedAt', isGreaterThanOrEqualTo: startOfWeek)
         .get();
         
     Map<int, double> weeklyStats = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0};
     
     for (var doc in snapshot.docs) {
       final run = RunModel.fromMap(doc.data(), doc.id);
-      final weekday = run.startedAt.weekday; // 1 (Mon) to 7 (Sun)
-      weeklyStats[weekday] = (weeklyStats[weekday] ?? 0) + run.distance;
+      if (!run.startedAt.isBefore(startOfWeek)) {
+        final weekday = run.startedAt.weekday; // 1 (Mon) to 7 (Sun)
+        weeklyStats[weekday] = (weeklyStats[weekday] ?? 0) + run.distance;
+      }
     }
     
     return weeklyStats;
