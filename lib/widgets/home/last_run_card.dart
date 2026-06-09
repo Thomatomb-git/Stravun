@@ -64,54 +64,83 @@ class LastRunCard extends StatelessWidget {
       children: [
         // Placeholder for map thumbnail
         Container(
-          height: 120,
+          height: 140,
           width: double.infinity,
           decoration: BoxDecoration(
             color: AppColors.backgroundPrimary,
             borderRadius: BorderRadius.circular(AppConstants.radiusMd),
+            gradient: RadialGradient(
+              colors: [
+                AppColors.accentNeon.withValues(alpha: 0.3),
+                Colors.transparent,
+              ],
+              radius: 0.8,
+            )
           ),
-          child: const Center(
-            child: Icon(Icons.map_outlined, color: AppColors.textSecondary, size: 32),
+          child: Stack(
+            children: [
+              Positioned(
+                bottom: 16,
+                left: 16,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(
+                    color: AppColors.backgroundSurface,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.location_on, color: Colors.white, size: 20),
+                ),
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: AppConstants.stackMd),
+        const SizedBox(height: AppConstants.stackLg),
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            Expanded(
-              child: StatCard(
-                icon: Icons.route,
-                value: currentRun.distance.toStringAsFixed(2),
-                label: 'km',
-              ),
+            _buildStatCol('Distance', currentRun.distance.toStringAsFixed(1), 'km'),
+            _buildVerticalDivider(),
+            _buildStatCol('Duration', '${currentRun.duration ~/ 60}', 'min'),
+            _buildVerticalDivider(),
+            _buildStatCol('Calories', '${currentRun.calories}', 'kcal'),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatCol(String label, String value, String unit) {
+    return Column(
+      children: [
+        Text(
+          label,
+          style: AppTextStyles.labelSm.copyWith(color: AppColors.textSecondary),
+        ),
+        const SizedBox(height: 4),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Text(
+              value,
+              style: AppTextStyles.headlineMd,
             ),
-            const SizedBox(width: AppConstants.stackSm),
-            Expanded(
-              child: StatCard(
-                icon: Icons.timer,
-                value: '${currentRun.duration ~/ 60}',
-                label: 'min',
-              ),
-            ),
-            const SizedBox(width: AppConstants.stackSm),
-            Expanded(
-              child: StatCard(
-                icon: Icons.local_fire_department,
-                value: '${currentRun.calories}',
-                label: 'kcal',
-              ),
-            ),
-            const SizedBox(width: AppConstants.stackSm),
-            Expanded(
-              child: StatCard(
-                icon: Icons.speed,
-                value: currentRun.pace.toStringAsFixed(1),
-                label: 'min/km',
-              ),
+            const SizedBox(width: 4),
+            Text(
+              unit,
+              style: AppTextStyles.labelSm.copyWith(color: AppColors.textSecondary),
             ),
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildVerticalDivider() {
+    return Container(
+      height: 30,
+      width: 1,
+      color: AppColors.borderMuted,
     );
   }
 }

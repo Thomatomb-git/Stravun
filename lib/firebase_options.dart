@@ -51,11 +51,11 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'dummy-api-key',
-    appId: '1:1234567890:android:dummy1234',
-    messagingSenderId: '1234567890',
-    projectId: 'stravun-dummy',
-    storageBucket: 'stravun-dummy.appspot.com',
+    apiKey: 'AIzaSyC_-5y82Oylh788iAzqdQxf4uCqf2iF_Uo',
+    appId: '1:102327170017:android:065d0e6b8d4337f68e18a0',
+    messagingSenderId: '102327170017',
+    projectId: 'a2fe4bcw',
+    storageBucket: 'a2fe4bcw.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(

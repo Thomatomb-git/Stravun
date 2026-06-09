@@ -115,10 +115,16 @@ class FirestoreService {
   Future<List<RunModel>> getRecentRuns(String uid, {int limit = 20}) async {
     final snapshot = await _db.collection('runs')
         .where('userId', isEqualTo: uid)
-        .orderBy('startedAt', descending: true)
-        .limit(limit)
         .get();
-    return snapshot.docs.map((doc) => RunModel.fromMap(doc.data(), doc.id)).toList();
+    
+    final runs = snapshot.docs.map((doc) => RunModel.fromMap(doc.data(), doc.id)).toList();
+    // Sort descending by startedAt
+    runs.sort((a, b) => b.startedAt.compareTo(a.startedAt));
+    
+    if (runs.length > limit) {
+      return runs.sublist(0, limit);
+    }
+    return runs;
   }
 
   Future<RunModel?> getLastRun(String uid) async {
@@ -133,15 +139,16 @@ class FirestoreService {
     
     final snapshot = await _db.collection('runs')
         .where('userId', isEqualTo: uid)
-        .where('startedAt', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfWeek))
         .get();
         
     Map<int, double> weeklyStats = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0};
     
     for (var doc in snapshot.docs) {
       final run = RunModel.fromMap(doc.data(), doc.id);
-      final weekday = run.startedAt.weekday; // 1 (Mon) to 7 (Sun)
-      weeklyStats[weekday] = (weeklyStats[weekday] ?? 0) + run.distance;
+      if (run.startedAt.isAfter(startOfWeek) || run.startedAt.isAtSameMomentAs(startOfWeek)) {
+        final weekday = run.startedAt.weekday; // 1 (Mon) to 7 (Sun)
+        weeklyStats[weekday] = (weeklyStats[weekday] ?? 0) + run.distance;
+      }
     }
     
     return weeklyStats;

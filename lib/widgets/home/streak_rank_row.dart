@@ -20,9 +20,8 @@ class StreakRankRow extends StatelessWidget {
       children: [
         // Streak Card
         Expanded(
-          flex: 2,
           child: Container(
-            padding: const EdgeInsets.all(AppConstants.stackMd),
+            padding: const EdgeInsets.all(AppConstants.gutter),
             decoration: BoxDecoration(
               color: AppColors.backgroundSurface,
               borderRadius: BorderRadius.circular(AppConstants.radiusLg),
@@ -32,22 +31,22 @@ class StreakRankRow extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.bolt, color: AppColors.accentNeon, size: 20),
-                    const SizedBox(width: 4),
+                    const Icon(Icons.bolt, color: Colors.yellowAccent, size: 20),
+                    const SizedBox(width: 8),
                     Text(
-                      'Streak',
-                      style: AppTextStyles.labelSm.copyWith(color: AppColors.textSecondary),
+                      'STREAK',
+                      style: AppTextStyles.labelSm.copyWith(color: AppColors.textSecondary, letterSpacing: 1.0),
                     ),
                   ],
                 ),
-                const SizedBox(height: AppConstants.stackSm),
+                const SizedBox(height: AppConstants.stackLg),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.baseline,
                   textBaseline: TextBaseline.alphabetic,
                   children: [
                     Text(
                       streakDays.toString(),
-                      style: AppTextStyles.headlineMd,
+                      style: AppTextStyles.headlineLg,
                     ),
                     const SizedBox(width: 4),
                     Text(
@@ -63,9 +62,8 @@ class StreakRankRow extends StatelessWidget {
         const SizedBox(width: AppConstants.gutter),
         // Rank Card
         Expanded(
-          flex: 3,
           child: Container(
-            padding: const EdgeInsets.all(AppConstants.stackMd),
+            padding: const EdgeInsets.all(AppConstants.gutter),
             decoration: BoxDecoration(
               color: AppColors.backgroundSurface,
               borderRadius: BorderRadius.circular(AppConstants.radiusLg),
@@ -75,34 +73,18 @@ class StreakRankRow extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.emoji_events, color: AppColors.tierGold, size: 20),
-                    const SizedBox(width: 4),
+                    const Icon(Icons.public, color: AppColors.textSecondary, size: 20),
+                    const SizedBox(width: 8),
                     Text(
-                      'Global Rank',
-                      style: AppTextStyles.labelSm.copyWith(color: AppColors.textSecondary),
+                      'GLOBAL RANK',
+                      style: AppTextStyles.labelSm.copyWith(color: AppColors.textSecondary, letterSpacing: 1.0),
                     ),
                   ],
                 ),
-                const SizedBox(height: AppConstants.stackSm),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Text(
-                      _formatRank(rank),
-                      style: AppTextStyles.headlineMd,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppConstants.stackLg),
                 Text(
-                  rank > 1 ? 'Just $pointsToNext pts to next rank!' : 'You are #1!',
-                  style: AppTextStyles.labelSm.copyWith(
-                    color: AppColors.accentNeon,
-                    fontSize: 10,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  _formatRank(rank),
+                  style: AppTextStyles.headlineLg,
                 ),
               ],
             ),

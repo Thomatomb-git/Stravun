@@ -6,6 +6,9 @@ import 'providers/home_provider.dart';
 import 'providers/community_provider.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/community/community_screen.dart';
+import 'screens/auth/login_screen.dart';
+import 'screens/run/run_map_screen.dart';
+import 'screens/profile/profile_screen.dart';
 
 class StravunApp extends StatelessWidget {
   const StravunApp({super.key});
@@ -27,12 +30,38 @@ class StravunApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Stravun',
         theme: AppTheme.darkTheme,
-        home: const MainNavigation(),
+        home: const AuthGate(),
         debugShowCheckedModeBanner: false,
       ),
     );
   }
 }
+
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<AuthProvider>(
+      builder: (context, auth, _) {
+        if (auth.isLoading && !auth.isLoggedIn) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(color: AppColors.accentNeon),
+            ),
+          );
+        }
+        
+        if (auth.isLoggedIn) {
+          return const MainNavigation();
+        } else {
+          return const LoginScreen();
+        }
+      },
+    );
+  }
+}
+
 
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
@@ -46,9 +75,9 @@ class _MainNavigationState extends State<MainNavigation> {
 
   final List<Widget> _screens = [
     const HomeScreen(),
-    const Scaffold(body: Center(child: Text("Run (Coming Soon)"))),
+    const RunMapScreen(),
     const CommunityScreen(),
-    const Scaffold(body: Center(child: Text("Profile (Coming Soon)"))),
+    const ProfileScreen(),
   ];
 
   @override

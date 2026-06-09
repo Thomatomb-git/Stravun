@@ -17,31 +17,10 @@ class HomeHeader extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Hi, $username',
-                style: AppTextStyles.bodyLg.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'STRAVUN',
-                style: AppTextStyles.headlineMd.copyWith(
-                  color: AppColors.textPrimary,
-                  letterSpacing: 1.2,
-                ),
-              ),
-            ],
+          Text(
+            'Hi, $username',
+            style: AppTextStyles.headlineLg,
           ),
-          IconButton(
-            icon: const Icon(Icons.settings_outlined, color: AppColors.textSecondary),
-            onPressed: () {
-              // Settings action
-            },
-          )
         ],
       ),
     );

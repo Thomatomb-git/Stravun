@@ -1,4 +1,4 @@
-package com.example.app
+package com.stravun.app
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -51,7 +51,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to post comment: $e')),
+          const SnackBar(content: Text('Failed to post comment. Please try again.')),
         );
       }
     } finally {
@@ -79,8 +79,14 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: AppConstants.gutter),
-                    child: PostCard(
-                      post: widget.post,
+                    child: Consumer<CommunityProvider>(
+                      builder: (context, provider, _) {
+                        final updatedPost = provider.posts.firstWhere(
+                          (p) => p.id == widget.post.id,
+                          orElse: () => widget.post,
+                        );
+                        return PostCard(post: updatedPost);
+                      },
                     ),
                   ),
                 ),

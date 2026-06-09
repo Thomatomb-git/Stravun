@@ -9,8 +9,18 @@ class StorageService {
   // Upload an image file
   Future<String> uploadImage(File file, String path) async {
     try {
+      // Validate file extension
+      final extension = file.path.split('.').last.toLowerCase();
+      final allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+      if (!allowedExtensions.contains(extension)) {
+        throw Exception('Invalid image format. Allowed: ${allowedExtensions.join(", ")}');
+      }
+
       Reference ref = _storage.ref().child(path);
-      UploadTask uploadTask = ref.putFile(file);
+      UploadTask uploadTask = ref.putFile(
+        file,
+        SettableMetadata(contentType: 'image/$extension'),
+      );
       TaskSnapshot snapshot = await uploadTask;
       return await snapshot.ref.getDownloadURL();
     } catch (e) {

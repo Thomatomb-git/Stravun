@@ -64,7 +64,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         }
       }
     } catch (e) {
-      _showError('Error selecting media: $e');
+      _showError('Failed to select media. Please try again.');
     }
   }
 
@@ -132,15 +132,16 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.accentNeon,
                 foregroundColor: AppColors.backgroundPrimary,
-                disabledBackgroundColor: AppColors.textSecondary.withValues(alpha: 0.3),
-                disabledForegroundColor: AppColors.textSecondary,
+                disabledBackgroundColor: AppColors.borderMuted,
+                disabledForegroundColor: Colors.white.withValues(alpha: 0.5),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppConstants.radiusXl),
                 ),
               ),
               child: _isLoading 
                 ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.backgroundPrimary))
-                : const Text('Post', style: TextStyle(fontWeight: FontWeight.bold)),
+                : Text('Post', style: TextStyle(fontWeight: FontWeight.bold, color: canSubmit ? AppColors.backgroundPrimary : Colors.white70)),
             ),
           ),
         ],

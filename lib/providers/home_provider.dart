@@ -47,22 +47,42 @@ class HomeProvider extends ChangeNotifier {
 
     try {
       // 1. Get updated user model
-      _userModel = await _firestoreService.getUser(uid);
+      try {
+        _userModel = await _firestoreService.getUser(uid);
+      } catch (e) {
+        debugPrint("Error fetching user model: $e");
+      }
       
       // 2. Get last run
-      _lastRun = await _firestoreService.getLastRun(uid);
+      try {
+        _lastRun = await _firestoreService.getLastRun(uid);
+      } catch (e) {
+        debugPrint("Error fetching last run: $e");
+      }
       
       // 3. Get weekly stats
-      _weeklyStats = await _firestoreService.getWeeklyRunStats(uid);
+      try {
+        _weeklyStats = await _firestoreService.getWeeklyRunStats(uid);
+      } catch (e) {
+        debugPrint("Error fetching weekly stats: $e");
+      }
       
       // 4. Get global rank based on total points
-      _userRank = await _firestoreService.getUserRank(uid, 'totalPoints');
+      try {
+        _userRank = await _firestoreService.getUserRank(uid, 'totalPoints');
+      } catch (e) {
+        debugPrint("Error fetching user rank: $e");
+      }
       
       // Calculate points to next rank (mocked logic for now)
       _pointsToNextRank = 10; // TODO: implement real logic by comparing with rank above
       
       // 5. Handle Missions
-      await _handleMissions(uid);
+      try {
+        await _handleMissions(uid);
+      } catch (e) {
+        debugPrint("Error handling missions: $e");
+      }
 
     } catch (e) {
       debugPrint("Error refreshing home data: $e");
