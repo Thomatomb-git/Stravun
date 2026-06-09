@@ -3,7 +3,7 @@ import '../../config/theme.dart';
 import '../../utils/constants.dart';
 import '../../models/run_model.dart';
 import '../common/section_header.dart';
-import '../common/stat_card.dart';
+import 'package:flutter_map/flutter_map.dart';
 
 class LastRunCard extends StatelessWidget {
   final RunModel? run;
@@ -62,37 +62,41 @@ class LastRunCard extends StatelessWidget {
   Widget _buildRunStats(RunModel currentRun) {
     return Column(
       children: [
-        // Placeholder for map thumbnail
+        // Actual map thumbnail
         Container(
           height: 140,
           width: double.infinity,
           decoration: BoxDecoration(
             color: AppColors.backgroundPrimary,
             borderRadius: BorderRadius.circular(AppConstants.radiusMd),
-            gradient: RadialGradient(
-              colors: [
-                AppColors.accentNeon.withValues(alpha: 0.3),
-                Colors.transparent,
-              ],
-              radius: 0.8,
-            )
           ),
-          child: Stack(
-            children: [
-              Positioned(
-                bottom: 16,
-                left: 16,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: AppColors.backgroundSurface,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.location_on, color: Colors.white, size: 20),
+          clipBehavior: Clip.hardEdge,
+          child: currentRun.route.isEmpty 
+            ? Center(
+                child: Text('No route data', style: AppTextStyles.labelSm.copyWith(color: AppColors.textSecondary)),
+              )
+            : FlutterMap(
+                options: MapOptions(
+                  initialCenter: currentRun.route.first,
+                  initialZoom: 15,
+                  interactionOptions: const InteractionOptions(flags: InteractiveFlag.none),
                 ),
+                children: [
+                  TileLayer(
+                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName: 'com.example.stravun',
+                  ),
+                  PolylineLayer(
+                    polylines: [
+                      Polyline(
+                        points: currentRun.route,
+                        strokeWidth: 4.0,
+                        color: AppColors.accentNeon,
+                      ),
+                    ],
+                  ),
+                ],
               ),
-            ],
-          ),
         ),
         const SizedBox(height: AppConstants.stackLg),
         Row(

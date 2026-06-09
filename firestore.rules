@@ -17,8 +17,8 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isAuthenticated();
       allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
-      allow delete: if false; // Users cannot delete their own accounts via client
+      allow update: if isOwner(userId); // Klien bebas update poin/statistik (Client-Trust Model)
+      allow delete: if false;
     }
 
     // Runs collection
@@ -32,7 +32,13 @@ service cloud.firestore {
     match /posts/{postId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      
+      // FIX KRUSIAL: Pemilik post bisa edit/delete. Orang lain HANYA bisa update likeCount/commentCount
+      allow update: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid || 
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likeCount', 'commentCount', 'updatedAt'])
+      );
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
 
       // Likes subcollection
       match /likes/{likeId} {
@@ -51,7 +57,9 @@ service cloud.firestore {
     // Missions collection
     match /missions/{missionId} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated(); // Any authenticated user can create/update missions (for auto-generation)
+      // Klien boleh generate misi baru, tapi dilarang keras menghapus (Delete)
+      allow create, update: if isAuthenticated();
+      allow delete: if false;
     }
 
     // User Missions Progress collection

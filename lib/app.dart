@@ -84,32 +84,104 @@ class _MainNavigationState extends State<MainNavigation> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: _screens[_currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.play_arrow),
-            label: 'Run',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people),
-            label: 'Community',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
+      bottomNavigationBar: Theme(
+        data: Theme.of(context).copyWith(
+          splashColor: Colors.transparent,
+          highlightColor: Colors.transparent,
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          onTap: (index) {
+            setState(() {
+              _currentIndex = index;
+            });
+          },
+          backgroundColor: AppColors.backgroundPrimary,
+          selectedItemColor: AppColors.accentNeon,
+          unselectedItemColor: Colors.white,
+          type: BottomNavigationBarType.fixed,
+          elevation: 0,
+          showSelectedLabels: true,
+          showUnselectedLabels: true,
+          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+          unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal, fontSize: 12),
+          items: [
+            const BottomNavigationBarItem(
+              icon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.home_outlined)),
+              activeIcon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.home_outlined)),
+              label: 'Home',
+            ),
+            const BottomNavigationBarItem(
+              icon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.map_outlined)),
+              activeIcon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.map_outlined)),
+              label: 'Map',
+            ),
+            BottomNavigationBarItem(
+              icon: const Padding(padding: EdgeInsets.only(bottom: 4), child: CustomPlanetIcon(color: Colors.white)),
+              activeIcon: const Padding(padding: EdgeInsets.only(bottom: 4), child: CustomPlanetIcon(color: AppColors.accentNeon)),
+              label: 'Community',
+            ),
+            const BottomNavigationBarItem(
+              icon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.person_outline)),
+              activeIcon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.person_outline)),
+              label: 'User',
+            ),
+          ],
+        ),
       ),
     );
   }
+}
+
+class CustomPlanetIcon extends StatelessWidget {
+  final Color color;
+  final double size;
+
+  const CustomPlanetIcon({super.key, required this.color, this.size = 24});
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      size: Size(size, size),
+      painter: _PlanetPainter(color: color),
+    );
+  }
+}
+
+class _PlanetPainter extends CustomPainter {
+  final Color color;
+
+  _PlanetPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0
+      ..strokeCap = StrokeCap.round;
+
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width * 0.35;
+
+    // Draw the planet outline
+    canvas.drawCircle(center, radius, paint);
+
+    // Draw the diagonal ring slash
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.rotate(-0.6); // slight diagonal rotation
+    
+    // Draw the slash line that extends slightly beyond the circle
+    final lineLength = radius * 1.5;
+    canvas.drawLine(
+      Offset(-lineLength, 0),
+      Offset(lineLength, 0),
+      paint,
+    );
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant _PlanetPainter oldDelegate) => oldDelegate.color != color;
 }

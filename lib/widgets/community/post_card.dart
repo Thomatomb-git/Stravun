@@ -6,6 +6,8 @@ import '../../utils/constants.dart';
 import '../../models/post_model.dart';
 import '../../providers/community_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/firestore_service.dart';
+import '../../screens/run/run_summary_screen.dart';
 import '../common/user_avatar.dart';
 
 class PostCard extends StatelessWidget {
@@ -124,28 +126,51 @@ class PostCard extends StatelessWidget {
                     : null,
               ),
 
-            // Attached Run (Placeholder)
+            // Attached Run
             if (post.attachedRunId != null)
-              Container(
-                margin: const EdgeInsets.only(top: AppConstants.stackMd),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.backgroundPrimary,
-                  borderRadius: BorderRadius.circular(AppConstants.radiusMd),
-                  border: Border.all(color: AppColors.accentNeon.withValues(alpha: 0.3)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.directions_run, color: AppColors.accentNeon),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Attached Run',
-                        style: AppTextStyles.labelMd.copyWith(color: AppColors.textPrimary),
+              GestureDetector(
+                onTap: () async {
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (context) => const Center(child: CircularProgressIndicator(color: AppColors.accentNeon)),
+                  );
+                  final run = await FirestoreService().getRunById(post.attachedRunId!);
+                  if (context.mounted) {
+                    Navigator.pop(context); // close dialog
+                    if (run != null) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => RunSummaryScreen(runModel: run, isViewOnly: true),
+                        ),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Run data not found')));
+                    }
+                  }
+                },
+                child: Container(
+                  margin: const EdgeInsets.only(top: AppConstants.stackMd),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.backgroundPrimary,
+                    borderRadius: BorderRadius.circular(AppConstants.radiusMd),
+                    border: Border.all(color: AppColors.accentNeon.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.directions_run, color: AppColors.accentNeon),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Attached Run',
+                          style: AppTextStyles.labelMd.copyWith(color: AppColors.textPrimary),
+                        ),
                       ),
-                    ),
-                    const Icon(Icons.chevron_right, color: AppColors.textSecondary),
-                  ],
+                      const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+                    ],
+                  ),
                 ),
               ),
 
@@ -160,6 +185,7 @@ class PostCard extends StatelessWidget {
                   icon: isLiked ? Icons.favorite : Icons.favorite_border,
                   color: isLiked ? Colors.redAccent : AppColors.textSecondary,
                   count: post.likeCount,
+                  label: 'Like',
                   onTap: () {
                     communityProvider.toggleLike(post.id);
                   },
@@ -169,6 +195,7 @@ class PostCard extends StatelessWidget {
                   icon: Icons.chat_bubble_outline,
                   color: AppColors.textSecondary,
                   count: post.commentCount,
+                  label: 'Comment',
                   onTap: onTap,
                 ),
               ],
@@ -183,6 +210,7 @@ class PostCard extends StatelessWidget {
     required IconData icon,
     required Color color,
     required int count,
+    required String label,
     VoidCallback? onTap,
   }) {
     return InkWell(
@@ -195,7 +223,7 @@ class PostCard extends StatelessWidget {
             Icon(icon, color: color, size: 20),
             const SizedBox(width: 6),
             Text(
-              count > 0 ? '$count' : 'Like', // If chat, might want "Comment" instead, simplified here.
+              count > 0 ? '$count' : label,
               style: AppTextStyles.labelSm.copyWith(color: color),
             ),
           ],

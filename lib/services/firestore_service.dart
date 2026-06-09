@@ -68,17 +68,17 @@ class FirestoreService {
     final user = await getUser(uid);
     if (user == null) return -1;
     
-    // Very inefficient for large datasets, but ok for this scope
-    final snapshot = await _db.collection('users')
-        .orderBy(field, descending: true)
+    final userMap = user.toMap();
+    final userValue = userMap[field];
+    if (userValue == null) return -1;
+
+    // Use count() aggregate query to get rank efficiently
+    final aggregateQuery = await _db.collection('users')
+        .where(field, isGreaterThan: userValue)
+        .count()
         .get();
     
-    for (int i = 0; i < snapshot.docs.length; i++) {
-      if (snapshot.docs[i].id == uid) {
-        return i + 1;
-      }
-    }
-    return -1;
+    return (aggregateQuery.count ?? 0) + 1;
   }
 
   // --- Run Operations ---
@@ -109,6 +109,9 @@ class FirestoreService {
         'weeklyDistanceResetDate': resetWeekly ? FieldValue.serverTimestamp() : Timestamp.fromDate(user.weeklyDistanceResetDate),
         'highestPace': newHighestPace,
       });
+      
+      // Evaluate missions
+      await evaluateMissions(run.userId, run: run);
     }
   }
 
@@ -132,6 +135,14 @@ class FirestoreService {
     return runs.isNotEmpty ? runs.first : null;
   }
 
+  Future<RunModel?> getRunById(String runId) async {
+    final doc = await _db.collection('runs').doc(runId).get();
+    if (doc.exists && doc.data() != null) {
+      return RunModel.fromMap(doc.data()!, doc.id);
+    }
+    return null;
+  }
+
   Future<Map<int, double>> getWeeklyRunStats(String uid) async {
     final now = DateTime.now();
     // Start of the week (Monday)
@@ -139,16 +150,15 @@ class FirestoreService {
     
     final snapshot = await _db.collection('runs')
         .where('userId', isEqualTo: uid)
+        .where('startedAt', isGreaterThanOrEqualTo: startOfWeek)
         .get();
         
     Map<int, double> weeklyStats = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0};
     
     for (var doc in snapshot.docs) {
       final run = RunModel.fromMap(doc.data(), doc.id);
-      if (run.startedAt.isAfter(startOfWeek) || run.startedAt.isAtSameMomentAs(startOfWeek)) {
-        final weekday = run.startedAt.weekday; // 1 (Mon) to 7 (Sun)
-        weeklyStats[weekday] = (weeklyStats[weekday] ?? 0) + run.distance;
-      }
+      final weekday = run.startedAt.weekday; // 1 (Mon) to 7 (Sun)
+      weeklyStats[weekday] = (weeklyStats[weekday] ?? 0) + run.distance;
     }
     
     return weeklyStats;
@@ -157,6 +167,9 @@ class FirestoreService {
   // --- Post Operations ---
   Future<void> createPost(PostModel post) async {
     await _db.collection('posts').doc(post.id).set(post.toMap());
+    
+    // Evaluate missions
+    await evaluateMissions(post.userId, isPost: true);
   }
 
   Future<List<PostModel>> getPosts({int limit = 20, DocumentSnapshot? startAfter}) async {
@@ -184,35 +197,41 @@ class FirestoreService {
   }
 
   Future<void> deletePost(String postId) async {
+    final batch = _db.batch();
+    
     // Delete likes subcollection
     final likes = await _db.collection('posts').doc(postId).collection('likes').get();
     for (var doc in likes.docs) {
-      await doc.reference.delete();
+      batch.delete(doc.reference);
     }
     // Delete comments subcollection
     final comments = await _db.collection('posts').doc(postId).collection('comments').get();
     for (var doc in comments.docs) {
-      await doc.reference.delete();
+      batch.delete(doc.reference);
     }
     // Delete post document
-    await _db.collection('posts').doc(postId).delete();
+    batch.delete(_db.collection('posts').doc(postId));
+    
+    await batch.commit();
   }
 
   Future<void> toggleLike(String postId, String userId) async {
     final likeRef = _db.collection('posts').doc(postId).collection('likes').doc(userId);
     final postRef = _db.collection('posts').doc(postId);
     
-    final likeDoc = await likeRef.get();
-    
-    if (likeDoc.exists) {
-      // Unlike
-      await likeRef.delete();
-      await postRef.update({'likeCount': FieldValue.increment(-1)});
-    } else {
-      // Like
-      await likeRef.set({'createdAt': FieldValue.serverTimestamp()});
-      await postRef.update({'likeCount': FieldValue.increment(1)});
-    }
+    await _db.runTransaction((transaction) async {
+      final likeDoc = await transaction.get(likeRef);
+      
+      if (likeDoc.exists) {
+        // Unlike
+        transaction.delete(likeRef);
+        transaction.update(postRef, {'likeCount': FieldValue.increment(-1)});
+      } else {
+        // Like
+        transaction.set(likeRef, {'createdAt': FieldValue.serverTimestamp()});
+        transaction.update(postRef, {'likeCount': FieldValue.increment(1)});
+      }
+    });
   }
 
   Future<bool> isPostLikedByUser(String postId, String userId) async {
@@ -274,6 +293,97 @@ class FirestoreService {
     
     if (points > 0) {
       await addPoints(userId, points);
+    }
+  }
+
+  Future<void> evaluateMissions(String userId, {RunModel? run, bool isPost = false}) async {
+    MissionCycle? cycle = await getCurrentMissionCycle();
+    if (cycle == null) return;
+    
+    UserMissionProgress? progress = await getUserMissionProgress(userId, cycle.id);
+    progress ??= UserMissionProgress(userId: userId, missionCycleId: cycle.id);
+    
+    bool updated = false;
+    double bProg = progress.bronzeProgress;
+    bool bComp = progress.bronzeCompleted;
+    bool bClaim = progress.bronzeClaimedPoints;
+
+    double sProg = progress.silverProgress;
+    bool sComp = progress.silverCompleted;
+    bool sClaim = progress.silverClaimedPoints;
+
+    double gProg = progress.goldProgress;
+    bool gComp = progress.goldCompleted;
+    bool gClaim = progress.goldClaimedPoints;
+
+    Future<void> evaluate(MissionDefinition mission, String tier) async {
+      double currentProgress = tier == 'bronze' ? bProg : (tier == 'silver' ? sProg : gProg);
+      bool completed = tier == 'bronze' ? bComp : (tier == 'silver' ? sComp : gComp);
+      bool claimed = tier == 'bronze' ? bClaim : (tier == 'silver' ? sClaim : gClaim);
+
+      if (completed) return;
+
+      double newProgress = currentProgress;
+
+      if (run != null) {
+        if (mission.type == 'run_distance') {
+          newProgress += run.distance;
+        } else if (mission.type == 'burn_calories') {
+          newProgress += run.calories;
+        } else if (mission.type == 'run_duration') {
+          newProgress += run.duration / 60.0;
+        } else if (mission.type == 'run_count') {
+          newProgress += 1;
+        } else if (mission.type == 'run_steps') {
+          newProgress += run.steps;
+        } else if (mission.type == 'run_pace') {
+          if (run.pace > 0 && run.pace <= mission.targetValue) {
+            newProgress = mission.targetValue;
+          }
+        }
+      }
+
+      if (isPost && mission.type == 'forum_post') {
+        newProgress += 1;
+      }
+
+      if (newProgress > currentProgress || (mission.type == 'run_pace' && newProgress > 0)) {
+        updated = true;
+        
+        bool newlyCompleted = false;
+        if (mission.type == 'run_pace') {
+          newlyCompleted = newProgress <= mission.targetValue && newProgress > 0;
+        } else {
+          newProgress = newProgress > mission.targetValue ? mission.targetValue : newProgress;
+          newlyCompleted = newProgress >= mission.targetValue;
+        }
+
+        if (newlyCompleted && !claimed) {
+           await claimMissionPoints(userId, tier);
+           claimed = true;
+        }
+
+        if (tier == 'bronze') {
+          bProg = newProgress; bComp = newlyCompleted; bClaim = claimed;
+        } else if (tier == 'silver') {
+          sProg = newProgress; sComp = newlyCompleted; sClaim = claimed;
+        } else if (tier == 'gold') {
+          gProg = newProgress; gComp = newlyCompleted; gClaim = claimed;
+        }
+      }
+    }
+
+    await evaluate(cycle.bronzeMission, 'bronze');
+    await evaluate(cycle.silverMission, 'silver');
+    await evaluate(cycle.goldMission, 'gold');
+
+    if (updated) {
+      progress = progress.copyWith(
+        bronzeProgress: bProg, bronzeCompleted: bComp, bronzeClaimedPoints: bClaim,
+        silverProgress: sProg, silverCompleted: sComp, silverClaimedPoints: sClaim,
+        goldProgress: gProg, goldCompleted: gComp, goldClaimedPoints: gClaim,
+      );
+      await updateMissionProgress(progress);
     }
   }
 }

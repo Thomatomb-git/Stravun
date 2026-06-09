@@ -21,8 +21,15 @@ class DailyMissionsSection extends StatelessWidget {
       return const SizedBox.shrink(); // Hide if no data
     }
 
-    final daysLeft = missionCycle!.cycleEndDate.difference(DateTime.now()).inDays;
-    final subtitle = daysLeft > 0 ? 'Resets in $daysLeft days' : 'Resets today';
+    final durationLeft = missionCycle!.cycleEndDate.difference(DateTime.now());
+    final hoursLeft = durationLeft.inHours;
+    final String subtitle;
+    if (hoursLeft > 0) {
+      subtitle = 'Resets in $hoursLeft hr';
+    } else {
+      final minsLeft = durationLeft.inMinutes;
+      subtitle = minsLeft > 0 ? 'Resets in $minsLeft min' : 'Resets soon';
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

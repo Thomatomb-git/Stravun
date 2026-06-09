@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/community_provider.dart';
+import '../../providers/home_provider.dart';
 import '../../config/theme.dart';
 import '../../utils/constants.dart';
 import '../../widgets/common/user_avatar.dart';
@@ -95,6 +96,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       );
       
       if (mounted) {
+        // Refresh home data so missions progress updates automatically
+        Provider.of<HomeProvider>(context, listen: false).refreshHomeData();
+        
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Post created successfully!')),
